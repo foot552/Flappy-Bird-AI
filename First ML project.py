@@ -9,7 +9,7 @@ pygame.font.init()
 WIN_WIDTH = 500
 WIN_HEIGHT = 800
 
-win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+
 
 BIRD_IMGS = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird1.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird2.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird3.png")))]
 PIPE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "pipe.png")))
@@ -145,9 +145,9 @@ class Base:
         win.blit(self.IMG, (self.x2, self.y))
         
 
-def draw_window(win, bird, pipes, base, score):
+def draw_window(win, birds, pipes, base, score):
     win.blit(BG_IMG, (0,0))
-    bird.draw(win)
+    
     for pipe in pipes:
         pipe.draw(win)
     text = STAT_FONT.render("Score: " + str(score), 1,(255,255,255))
@@ -162,18 +162,20 @@ def main(genomes, config): #We can also use this as the fitness function(for mul
     nets = [] #Keeping track of bird that particular neural network controls
     ge = []   #Keeping track of genomes
 
-    for _,g in genomes:  #This code block sets neural network for genomes
-        net = neat.nn.FeedForwardNetwork.create(g, config)
-        nets.append(net)
-        birds.append(Bird(230, 350))#appending bird object which is acted upon by this neural network
-        g.fitness = 0
-        ge.append(g)
+    
     birds = [] #'bird' Variable is now a list coz we will have multiple of them
     base = Base(730)
     pipes = [Pipe(700)]
     win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
     clock = pygame.time.Clock()
     score = 0
+
+    for _,g in genomes:  #This code block sets neural network for genomes
+        net = neat.nn.FeedForwardNetwork.create(g, config)
+        nets.append(net)
+        birds.append(Bird(230, 350))#appending bird object which is acted upon by this neural network
+        g.fitness = 0
+        ge.append(g)
     
     
 
@@ -200,7 +202,7 @@ def main(genomes, config): #We can also use this as the fitness function(for mul
             bird.move()
             ge[x].fitness += 0.1  #For each second a bird stays alive, we add 0.1 fitness so that its encouraged to stay alive
             output = nets[x].activate((bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom))) # nets stands for neural network...So we r feeding the neural network our bird y poition , distance between bird and top pipe and distance between bird and bottom pipe...abs() gives absolute value of the number as distance is alsways positive...The output is given by NEAT and the CONFIG file
-            if ouput[0] > 0.5: #As output neurons is a list , we put [0]
+            if output[0] > 0.5: #As output neurons is a list , we put [0]
                 bird.jump()
         add_pipe = False
         rem = []
@@ -208,7 +210,7 @@ def main(genomes, config): #We can also use this as the fitness function(for mul
             for x, bird in enumerate(birds): #For birds x,  in enumerate(birds)(new addition) because now bird is a list
                 if pipe.collide(bird):
                     ge[x].fitness -= 1 #Every time a bird hits a pipe, fitness dcreases by 1
-                    birds.remove(bird) #Removing bird that collides with pipe
+                     #Removing bird that collides with pipe
                     birds.pop(x) #Last three code bloacks removes data of bird that collides...the pop() functions removes these data from the list
                     nets.pop(x)
                     ge.pop(x)
@@ -248,7 +250,7 @@ def run(config_path):  #Another Block of code required by NEAT
     p = neat.Population(config) #Creating the population
     p.add_reporter(neat.StdOutReporter(True)) #Just a code block that gives us a few stats while running the code
     stats = neat.StatisticsReporter()
-    p.add_addreporter(stats) #Last 3 lines just print stats while running code
+    p.add_reporter(stats) #Last 3 lines just print stats while running code
     
     winner = p.run(main,50) #Defining our fitness function and how many Generations we will run .."Main" tells our function and 50 tells how many generations we will run 
 if __name__ == "__main__":   #Block of code required by NEAT to load CONFIG file
